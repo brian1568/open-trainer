@@ -1,0 +1,28 @@
+{
+  "name": "open-trainer",
+  "version": "0.0.1",
+  "description": "OpenTrainer helps people learn and retain information on any topic. It is based on the concept of flash cards.",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brian1568/open-trainer.git"
+  },
+  "keywords": [
+    "universal",
+    "trainer",
+    "learn",
+    "retain"
+  ],
+  "author": "Brian C. Smith",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/brian1568/open-trainer/issues"
+  },
+  "homepage": "https://github.com/brian1568/open-trainer#readme",
+  "devDependencies": {
+    "jest": "^27.3.1"
+  }
+}
