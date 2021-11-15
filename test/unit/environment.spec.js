@@ -1,14 +1,14 @@
 describe('Local Machine Environment', () => {
 
-   it('should use correct nodejs version', () => {
+   it('should use correct Node.js version', () => {
        // arrange
-       const expectedNodeJsVersion = 'v16.13.0'
+       const expectedVersion = 'v16.13.0'
 
        // act
-       const detectedNodeJsVersion = process.version;
+       const detectedVersion = process.version;
 
        // assert
-       expect(detectedNodeJsVersion).toEqual(expectedNodeJsVersion);
+       expect(detectedVersion).toEqual(expectedVersion);
    });
 
 });
