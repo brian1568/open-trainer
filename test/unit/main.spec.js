@@ -1,10 +1,10 @@
 const {main} = require('../../src/main');
-const {getContent} = require('../../src/content-broker');
+const {getContent} = require('../../src/static-content-broker');
 const {display} = require('../../src/text-ui');
 const Chance = require('chance');
 const chance = new Chance();
 
-jest.mock('../../src/content-broker');
+jest.mock('../../src/static-content-broker');
 jest.mock('../../src/text-ui');
 
 describe('Main Unit Tests', () => {

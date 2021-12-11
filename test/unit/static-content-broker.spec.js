@@ -1,4 +1,4 @@
-const {getContent} = require('../../src/content-broker');
+const {getContent} = require('../../src/static-content-broker');
 
 describe('Content Broker Unit Tests', () => {
 

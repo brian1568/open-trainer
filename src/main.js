@@ -1,4 +1,4 @@
-const { getContent } = require('./content-broker');
+const { getContent } = require('./static-content-broker');
 const { display } = require('./text-ui');
 
 function main() {
