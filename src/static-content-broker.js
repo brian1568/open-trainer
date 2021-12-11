@@ -1,7 +1,7 @@
-function getContent() {
+function getAvailableTrainers() {
    return 'Multiplication Table: (0-9)';
 }
 
 module.exports = {
-   getContent
+   getAvailableTrainers
 };

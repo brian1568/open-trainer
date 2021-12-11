@@ -1,8 +1,8 @@
-const { getContent } = require('./static-content-broker');
+const { getAvailableTrainers } = require('./static-content-broker');
 const { display } = require('./text-ui');
 
 function main() {
-   const content = getContent();
+   const content = getAvailableTrainers();
 
    display('Available Content:');
    display(content);
