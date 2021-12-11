@@ -1,9 +1,13 @@
-const {getContent} = require('./content-broker');
+const { getContent } = require('./content-broker');
 
 function main() {
-   getContent();
+   console.log(getContent());
 }
 
 module.exports = {
    main
-};
+}
+
+if (require.main === module) {
+   main();
+}
