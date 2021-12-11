@@ -1,5 +1,5 @@
 function getContent() {
-   return 'horse';
+   return 'Multiplication Table: (0-9)';
 }
 
 module.exports = {
