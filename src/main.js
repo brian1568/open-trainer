@@ -1,7 +1,11 @@
 const { getContent } = require('./content-broker');
+const { display } = require('./text-ui');
 
 function main() {
-   console.log(getContent());
+   const content = getContent();
+
+   display('Available Content:');
+   display(content);
 }
 
 module.exports = {
