@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "test": "jest ./test/unit",
-    "TUI": "node src/main.js"
+    "TUI": "cross-env NODE_ENV=user node src/main.js"
   },
   "repository": {
     "type": "git",
@@ -25,6 +25,10 @@
   "homepage": "https://github.com/brian1568/open-trainer#readme",
   "devDependencies": {
     "chance": "^1.1.8",
+    "cross-env": "^7.0.3",
     "jest": "^27.3.1"
+  },
+  "dependencies": {
+    "config": "^3.3.6"
   }
 }
