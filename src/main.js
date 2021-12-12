@@ -7,7 +7,10 @@ function main() {
    const content = getAvailableTrainers(directory);
 
    display('Available Content:');
-   display(content);
+
+   for (let i = 0; i < content.length; i++) {
+      display(`${i + 1}: ${content[i]}`);
+   }
 }
 
 module.exports = {

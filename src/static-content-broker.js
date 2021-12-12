@@ -1,7 +1,7 @@
 const fs = require('fs');
 
-function getTrainerName(filename) {
-   const trainerName = fs.readFileSync(filename);
+function getTrainerName(path) {
+   const trainerName = fs.readFileSync(path, 'utf8');
 
    return trainerName;
 }
@@ -11,7 +11,7 @@ function getAvailableTrainers(directory) {
    const trainers = [];
    
    trainerFiles.forEach((filename) => {
-      trainers.push(getTrainerName(filename));
+      trainers.push(getTrainerName(`${directory}/${filename}`));
    });
 
    return trainers;
