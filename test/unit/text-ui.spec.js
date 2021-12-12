@@ -4,7 +4,7 @@ const chance = new Chance();
 
 describe('Text UI - Unit', () => {
   beforeAll(() => {
-    jest.spyOn(console, 'log');
+    jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
