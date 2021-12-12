@@ -4,9 +4,11 @@
   "description": "OpenTrainer helps people learn and retain information on any topic. It is based on the concept of flash cards.",
   "main": "main.js",
   "scripts": {
+    "lint": "eslint src test",
+    "fixlint": "eslint --fix",
     "test": "jest ./test/unit",
     "integration": "cross-env NODE_ENV=user jest ./test/integration",
-    "verify": "npm run test && npm run integration",
+    "verify": "npm run fixlint && npm run lint && npm run test && npm run integration",
     "TUI": "cross-env NODE_ENV=user node src/main.js"
   },
   "repository": {
@@ -28,6 +30,8 @@
   "devDependencies": {
     "chance": "^1.1.8",
     "cross-env": "^7.0.3",
+    "eslint": "^8.4.1",
+    "eslint-config-google": "^0.14.0",
     "jest": "^27.3.1"
   },
   "dependencies": {
