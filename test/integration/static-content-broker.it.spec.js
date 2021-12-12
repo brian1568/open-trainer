@@ -23,7 +23,7 @@ describe('Static Content Broker - Integration', () => {
       expect(result).toEqual(expectedResult);
    });
 
-   it.skip('should ignore directories adjacent to trainer files', () => {
+   it('should ignore directories adjacent to trainer files', () => {
       // arrange
       const directory = config.get('trainerDirectory');
 

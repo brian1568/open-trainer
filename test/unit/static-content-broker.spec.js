@@ -10,11 +10,22 @@ function generateMockTrainerFileContent(name) {
    return name;
 }
 
+function generateMockFsStatsEntry(isDirectory) {
+   return {
+      isFile: () => {
+         return !isDirectory;
+      }
+   };
+}
+
+// Generate random purely mocked trainer files in specified directory
+// When numDirectories > 0, will mix in that many directories
 function arrangeMockStaticTrainers(
-   directory, numTrainers = chance.integer({min: 1, max: 5})) {
+   directory, numTrainers = chance.integer({min: 1, max: 20}), numDirectories = 0) {
    const mockTrainerNames = [];
    const mockTrainerFileContentByPath = {};
    const mockDirectoryContent = [];
+   const mockFsStatsEntriesByPath = {};
 
    for (let i = 0; i < numTrainers; i++) {
       let trainerName = `trainerName-${chance.word()}`;
@@ -24,6 +35,18 @@ function arrangeMockStaticTrainers(
       mockTrainerNames.push(trainerName);
       mockDirectoryContent.push(trainerFilename);
       mockTrainerFileContentByPath[trainerPath] = generateMockTrainerFileContent(trainerName);
+
+      mockFsStatsEntriesByPath[trainerPath] = generateMockFsStatsEntry(false);
+   }
+
+   for (let j = 0; j < numDirectories; j++) {
+      let directoryName = `${chance.word()}-directory`;
+      let directoryPath = `${directory}/${directoryName}`;
+
+      mockDirectoryContent.push(directoryName);
+      mockTrainerFileContentByPath[directoryPath] = 'This is a directory, not a file!';
+
+      mockFsStatsEntriesByPath[directoryPath] = generateMockFsStatsEntry(true);
    }
 
    fs.readdirSync.mockName('mocked-readdirSync');
@@ -31,7 +54,18 @@ function arrangeMockStaticTrainers(
 
    fs.readFileSync.mockName('mocked-readdirSync');
    fs.readFileSync.mockImplementation((path) => {
-      return mockTrainerFileContentByPath[path];
+      const entry = mockTrainerFileContentByPath[path];
+
+      if (entry.endsWith('-directory')) {
+         throw new Error(`'${path}' is not a file!`);
+      }
+
+      return entry;
+   });
+
+   fs.lstatSync.mockName('mocked-lstatSync');
+   fs.lstatSync.mockImplementation((name) => {
+      return mockFsStatsEntriesByPath[name];
    });
 
    return chance.shuffle(mockTrainerNames);
@@ -70,4 +104,21 @@ describe('Static Content Broker - Unit', () => {
       expect(result.sort()).toEqual(availableTrainers.sort());
    });
 
+   it('should ignore directories in same directory as trainers', () => {
+      // arrange
+      const directory = `some-directory-${chance.word()}`;
+      const numTrainersToMock = chance.integer({min: 1, max: 5});
+      const numDirectoriesToIgnore = chance.integer({min: 1, max: 5});
+      const availableTrainers = arrangeMockStaticTrainers(directory, numTrainersToMock, numDirectoriesToIgnore);
+
+      // act
+      const result = getAvailableTrainers(directory);
+
+      // assert
+      expect(availableTrainers.length).toEqual(numTrainersToMock);
+
+      expect(result).toBeDefined();
+      //expect(result.length).toEqual(numTrainersToMock);
+      expect(result.sort()).toEqual(availableTrainers.sort());
+   });
 });

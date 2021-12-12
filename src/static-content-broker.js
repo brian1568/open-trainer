@@ -7,11 +7,13 @@ function getTrainerName(path) {
 }
 
 function getAvailableTrainers(directory) {
-   const trainerFiles = fs.readdirSync(directory);
+   const directoryEntries = fs.readdirSync(directory);
    const trainers = [];
    
-   trainerFiles.forEach((filename) => {
-      trainers.push(getTrainerName(`${directory}/${filename}`));
+   directoryEntries.forEach((entry) => {
+      if (fs.lstatSync(`${directory}/${entry}`).isFile()) {
+         trainers.push(getTrainerName(`${directory}/${entry}`));
+      }
    });
 
    return trainers;
