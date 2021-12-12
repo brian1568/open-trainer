@@ -3,27 +3,27 @@ const Chance = require('chance');
 const chance = new Chance();
 
 describe('Text UI - Unit', () => {
-   beforeAll(() => {
-      jest.spyOn(console, 'log');
-   });
+  beforeAll(() => {
+    jest.spyOn(console, 'log');
+  });
 
-   afterEach(() => {
-      console.log.mockClear();
-   });
+  afterEach(() => {
+    console.log.mockClear();
+  });
 
-   afterAll(() => {
-      console.log.mockRestore();
-   });
+  afterAll(() => {
+    console.log.mockRestore();
+  });
 
-   it('should display text to stdout', () => {
-      // arrange
-      const outputText = `The ${chance.animal()} says: '${chance.sentence({words: 5})}'`;
+  it('should display text to stdout', () => {
+    // arrange
+    const outputText = `The ${chance.animal()} says: '${chance.sentence({words: 5})}'`;
 
-      // act
-      display(outputText);
+    // act
+    display(outputText);
 
-      // assert
-      expect(console.log).toHaveBeenCalledTimes(1);
-      expect(console.log).toHaveBeenCalledWith(outputText);
-   });
+    // assert
+    expect(console.log).toHaveBeenCalledTimes(1);
+    expect(console.log).toHaveBeenCalledWith(outputText);
+  });
 });

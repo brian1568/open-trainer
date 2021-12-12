@@ -1,7 +1,7 @@
 function display(text) {
-   console.log(text);
+  console.log(text);
 }
 
 module.exports = {
-   display
-}
+  display,
+};
