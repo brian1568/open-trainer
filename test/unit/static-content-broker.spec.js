@@ -4,10 +4,16 @@ const Chance = require('chance');
 const chance = new Chance();
 
 jest.mock('fs');
+fs.readdirSync.mockName('mocked-readdirSync');
+fs.readFileSync.mockName('mocked-readdirSync');
+fs.lstatSync.mockName('mocked-lstatSync');
 
-// For now, structure of JSON file just contains trainer name
 function generateMockTrainerFileContent(name) {
-  return name;
+  const trainer = {
+    name,
+  };
+
+  return JSON.stringify(trainer);
 }
 
 function generateMockFsStatsEntry(isDirectory) {
@@ -24,26 +30,38 @@ function arrangeMockStaticTrainers(
     directory,
     numTrainers = chance.integer({min: 1, max: 20}),
     numDirectories = 0) {
-  const mockTrainerNames = [];
+  const mockTrainers = [];
   const mockTrainerFileContentByPath = {};
   const mockDirectoryContent = [];
   const mockFsStatsEntriesByPath = {};
+  let fileContent;
+
+  const uniqueTrainerNames = chance.unique(() => {
+    return `trainerName-${chance.word()}`;
+  }, numTrainers);
+  const uniqueTrainerFilenames = chance.unique(() => {
+    return `${chance.word()}-trainer.json`;
+  }, numTrainers);
 
   for (let i = 0; i < numTrainers; i++) {
-    const trainerName = `trainerName-${chance.word()}`;
-    const trainerFilename = `${chance.word()}-trainer.json`;
+    const trainerName = uniqueTrainerNames[i];
+    const trainerFilename = uniqueTrainerFilenames[i];
     const trainerPath = `${directory}/${trainerFilename}`;
 
-    mockTrainerNames.push(trainerName);
     mockDirectoryContent.push(trainerFilename);
-    mockTrainerFileContentByPath[trainerPath] =
-      generateMockTrainerFileContent(trainerName);
+    fileContent = generateMockTrainerFileContent(trainerName);
+    mockTrainerFileContentByPath[trainerPath] = fileContent;
+    mockTrainers.push(JSON.parse(fileContent));
 
     mockFsStatsEntriesByPath[trainerPath] = generateMockFsStatsEntry(false);
   }
 
+  const uniqueTrainerDirectoryNames = chance.unique(() => {
+    return `${chance.word()}-directory`;
+  }, numTrainers);
+
   for (let j = 0; j < numDirectories; j++) {
-    const directoryName = `${chance.word()}-directory`;
+    const directoryName = uniqueTrainerDirectoryNames[j];
     const directoryPath = `${directory}/${directoryName}`;
 
     mockDirectoryContent.push(directoryName);
@@ -53,10 +71,8 @@ function arrangeMockStaticTrainers(
     mockFsStatsEntriesByPath[directoryPath] = generateMockFsStatsEntry(true);
   }
 
-  fs.readdirSync.mockName('mocked-readdirSync');
   fs.readdirSync.mockReturnValue(mockDirectoryContent);
 
-  fs.readFileSync.mockName('mocked-readdirSync');
   fs.readFileSync.mockImplementation((path) => {
     const entry = mockTrainerFileContentByPath[path];
 
@@ -67,12 +83,15 @@ function arrangeMockStaticTrainers(
     return entry;
   });
 
-  fs.lstatSync.mockName('mocked-lstatSync');
   fs.lstatSync.mockImplementation((name) => {
     return mockFsStatsEntriesByPath[name];
   });
 
-  return chance.shuffle(mockTrainerNames);
+  return chance.shuffle(mockTrainers);
+}
+
+function trainerSorter(a, b) {
+  return a.name.localeCompare(b.name);
 }
 
 describe('Static Content Broker - Unit', () => {
@@ -80,18 +99,37 @@ describe('Static Content Broker - Unit', () => {
     jest.resetAllMocks();
   });
 
+  it('should return an array of objects with a specific structure', () => {
+    // arrange
+    const directory = `some-directory-${chance.word()}`;
+    const mockedTrainers = arrangeMockStaticTrainers(directory);
+    const numTrainers = mockedTrainers.length;
+
+    // act
+    const actualTrainers = getAvailableTrainers(directory);
+
+    // assert
+    expect(actualTrainers.length).toEqual(mockedTrainers.length);
+
+    let trainer;
+    for (let i = 0; i < numTrainers; i++) {
+      trainer = actualTrainers[i];
+      expect(trainer.name).toBeDefined();
+    }
+  });
+
   it('should return array of trainers found in specified directory', () => {
     // arrange
     const directory = `some-directory-${chance.word()}`;
-    const availableTrainers = arrangeMockStaticTrainers(directory);
-    const numTrainers = availableTrainers.length;
+    const mockedTrainers = arrangeMockStaticTrainers(directory);
+    const numTrainers = mockedTrainers.length;
 
     // act
-    const result = getAvailableTrainers(directory);
+    const actualTrainers = getAvailableTrainers(directory);
 
     // assert
-    expect(result).toBeDefined();
-    expect(result.length).toEqual(numTrainers);
+    expect(actualTrainers).toBeDefined();
+    expect(actualTrainers.length).toEqual(numTrainers);
 
     expect(fs.readdirSync).toHaveBeenCalledTimes(1);
     expect(fs.readdirSync).toHaveBeenCalledWith(directory);
@@ -109,7 +147,8 @@ describe('Static Content Broker - Unit', () => {
       expect(optionsParam).toEqual('utf8');
     }
 
-    expect(result.sort()).toEqual(availableTrainers.sort());
+    expect(actualTrainers.sort(trainerSorter))
+        .toEqual(mockedTrainers.sort(trainerSorter));
   });
 
   it('should ignore directories in same directory as trainers', () => {
@@ -117,17 +156,18 @@ describe('Static Content Broker - Unit', () => {
     const directory = `some-directory-${chance.word()}`;
     const numTrainersToMock = chance.integer({min: 1, max: 5});
     const numDirectoriesToIgnore = chance.integer({min: 1, max: 5});
-    const availableTrainers = arrangeMockStaticTrainers(
+    const mockedTrainers = arrangeMockStaticTrainers(
         directory, numTrainersToMock, numDirectoriesToIgnore);
 
     // act
-    const result = getAvailableTrainers(directory);
+    const actualTrainers = getAvailableTrainers(directory);
 
     // assert
-    expect(availableTrainers.length).toEqual(numTrainersToMock);
+    expect(mockedTrainers.length).toEqual(numTrainersToMock);
 
-    expect(result).toBeDefined();
-    expect(result.length).toEqual(numTrainersToMock);
-    expect(result.sort()).toEqual(availableTrainers.sort());
+    expect(actualTrainers).toBeDefined();
+    expect(actualTrainers.length).toEqual(numTrainersToMock);
+    expect(actualTrainers.sort(trainerSorter))
+        .toEqual(mockedTrainers.sort(trainerSorter));
   });
 });
