@@ -11,5 +11,6 @@
         "ecmaVersion": 13
     },
     "rules": {
+        "require-jsdoc": "off"
     }
 }
