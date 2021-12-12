@@ -118,7 +118,7 @@ describe('Static Content Broker - Unit', () => {
       expect(availableTrainers.length).toEqual(numTrainersToMock);
 
       expect(result).toBeDefined();
-      //expect(result.length).toEqual(numTrainersToMock);
+      expect(result.length).toEqual(numTrainersToMock);
       expect(result.sort()).toEqual(availableTrainers.sort());
    });
 });

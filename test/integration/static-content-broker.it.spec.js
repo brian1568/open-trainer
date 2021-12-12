@@ -13,24 +13,17 @@ describe('Static Content Broker - Integration', () => {
    it('should find trainer in directory', () => {
       // arrange
       const directory = config.get('trainerDirectory');
-      const expectedResult = ['Bar Trainer', 'Foo Trainer'];
+      const directoryEntries = fs.readdirSync(directory);
+      const trainerEntries = directoryEntries.filter((entry) => {
+         return entry.endsWith('.json');
+      });
+      const numJsonFiles = trainerEntries.length;
 
       // act
       const result = getAvailableTrainers(directory);
 
       // assert
       expect(result).toBeDefined();
-      expect(result).toEqual(expectedResult);
-   });
-
-   it('should ignore directories adjacent to trainer files', () => {
-      // arrange
-      const directory = config.get('trainerDirectory');
-
-      // act
-      const result = getAvailableTrainers(directory);
-
-      // assert
-      expect(result).toBeDefined();
+      expect(result.length).toEqual(numJsonFiles);
    });
 });
