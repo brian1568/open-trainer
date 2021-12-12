@@ -1,4 +1,4 @@
-const {display} = require('../../src/text-ui');
+const {display, displayAvailableContent} = require('../../src/text-ui');
 const Chance = require('chance');
 const chance = new Chance();
 
@@ -13,6 +13,25 @@ describe('Text UI - Unit', () => {
 
   afterAll(() => {
     console.log.mockRestore();
+  });
+
+  it('should display available content', () => {
+    // arrange
+    const label = 'Available Content:';
+    const content = ['horse', 'pig', 'whale'];
+
+    // act
+    displayAvailableContent(content);
+
+    // assert
+    expect(console.log).toHaveBeenNthCalledWith(1, label);
+
+    const nthCallOffset = 2;
+    for (let contentIndex = 0; contentIndex < content.length; contentIndex++) {
+      expect(console.log).toHaveBeenNthCalledWith(
+          nthCallOffset + contentIndex,
+          `${contentIndex + 1}: ${content[contentIndex]}`);
+    }
   });
 
   it('should display text to stdout', () => {
