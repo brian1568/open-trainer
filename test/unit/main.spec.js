@@ -8,7 +8,8 @@ const chance = new Chance();
 jest.mock('../../src/static-content-broker');
 jest.mock('../../src/text-ui');
 
-function generateMockAvailableTrainers(numTrainers = chance.integer({min: 1, max: 5})) {
+function generateMockAvailableTrainers(
+    numTrainers = chance.integer({min: 1, max: 5})) {
   const trainers = [];
 
   for (i = 0; i < numTrainers; i++) {

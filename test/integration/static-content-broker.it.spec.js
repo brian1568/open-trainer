@@ -1,8 +1,6 @@
 const config = require('config');
 const {getAvailableTrainers} = require('../../src/static-content-broker');
 const fs = require('fs');
-const Chance = require('chance');
-const chance = new Chance();
 
 describe('Static Content Broker - Integration', () => {
   beforeAll(() => {

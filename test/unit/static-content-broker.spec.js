@@ -21,7 +21,9 @@ function generateMockFsStatsEntry(isDirectory) {
 // Generate random purely mocked trainer files in specified directory
 // When numDirectories > 0, will mix in that many directories
 function arrangeMockStaticTrainers(
-    directory, numTrainers = chance.integer({min: 1, max: 20}), numDirectories = 0) {
+    directory,
+    numTrainers = chance.integer({min: 1, max: 20}),
+    numDirectories = 0) {
   const mockTrainerNames = [];
   const mockTrainerFileContentByPath = {};
   const mockDirectoryContent = [];
@@ -34,7 +36,8 @@ function arrangeMockStaticTrainers(
 
     mockTrainerNames.push(trainerName);
     mockDirectoryContent.push(trainerFilename);
-    mockTrainerFileContentByPath[trainerPath] = generateMockTrainerFileContent(trainerName);
+    mockTrainerFileContentByPath[trainerPath] =
+      generateMockTrainerFileContent(trainerName);
 
     mockFsStatsEntriesByPath[trainerPath] = generateMockFsStatsEntry(false);
   }
@@ -44,7 +47,8 @@ function arrangeMockStaticTrainers(
     const directoryPath = `${directory}/${directoryName}`;
 
     mockDirectoryContent.push(directoryName);
-    mockTrainerFileContentByPath[directoryPath] = 'This is a directory, not a file!';
+    mockTrainerFileContentByPath[directoryPath] =
+      'This is a directory, not a file!';
 
     mockFsStatsEntriesByPath[directoryPath] = generateMockFsStatsEntry(true);
   }
@@ -95,9 +99,14 @@ describe('Static Content Broker - Unit', () => {
 
     const pathIndex = 0;
     const optionsIndex = 1;
+    let pathParam;
+    let optionsParam;
     for (let i = 0; i < numTrainers; i++) {
-      expect(fs.readFileSync.mock.calls[i][pathIndex].startsWith(directory)).toEqual(true);
-      expect(fs.readFileSync.mock.calls[i][optionsIndex]).toEqual('utf8');
+      pathParam = fs.readFileSync.mock.calls[i][pathIndex];
+      expect(pathParam.startsWith(directory)).toEqual(true);
+
+      optionsParam = fs.readFileSync.mock.calls[i][optionsIndex];
+      expect(optionsParam).toEqual('utf8');
     }
 
     expect(result.sort()).toEqual(availableTrainers.sort());
@@ -108,7 +117,8 @@ describe('Static Content Broker - Unit', () => {
     const directory = `some-directory-${chance.word()}`;
     const numTrainersToMock = chance.integer({min: 1, max: 5});
     const numDirectoriesToIgnore = chance.integer({min: 1, max: 5});
-    const availableTrainers = arrangeMockStaticTrainers(directory, numTrainersToMock, numDirectoriesToIgnore);
+    const availableTrainers = arrangeMockStaticTrainers(
+        directory, numTrainersToMock, numDirectoriesToIgnore);
 
     // act
     const result = getAvailableTrainers(directory);

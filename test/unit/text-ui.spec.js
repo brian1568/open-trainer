@@ -17,7 +17,9 @@ describe('Text UI - Unit', () => {
 
   it('should display text to stdout', () => {
     // arrange
-    const outputText = `The ${chance.animal()} says: '${chance.sentence({words: 5})}'`;
+    const outputText =
+      `The ${chance.animal()} says:` +
+      `'${chance.sentence({words: 5})}'`;
 
     // act
     display(outputText);
