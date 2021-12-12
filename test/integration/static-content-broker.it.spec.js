@@ -4,7 +4,12 @@ const fs = require('fs');
 
 describe('Static Content Broker - Integration', () => {
   beforeAll(() => {
-    // cleanupTrainerFiles();
+    // cleanupTestTrainerFiles();
+    // setupTestTrainerFiles();
+  });
+
+  afterAll(() => {
+    // cleanupTestTrainerFiles();
   });
 
   it('should find trainer in directory', () => {

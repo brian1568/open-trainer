@@ -50,8 +50,5 @@ describe('Main Unit Tests', () => {
           nthCallOffset + trainerIndex,
           `${trainerIndex + 1}: ${trainers[trainerIndex]}`);
     }
-
-    // expect(display).toHaveBeenNthCalledWith(2, trainers[0]);
-    // expect(display).toHaveBeenNthCalledWith(2, trainers[0]);
   });
 });
