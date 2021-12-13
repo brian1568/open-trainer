@@ -24,10 +24,16 @@ function generateMockFsStatsEntry(isDirectory) {
   };
 }
 
+function generateMockFileSystem() {
+  return {
+    directory: `some-directory-${chance.word()}`,
+  };
+}
+
 // Generate random purely mocked trainer files in specified directory
 // When numDirectories > 0, will mix in that many directories
 function arrangeMockStaticTrainers(
-    directory,
+    mockFileSystem,
     numTrainers = chance.integer({min: 1, max: 20}),
     numDirectories = 0) {
   const mockTrainers = [];
@@ -46,7 +52,7 @@ function arrangeMockStaticTrainers(
   for (let i = 0; i < numTrainers; i++) {
     const trainerName = uniqueTrainerNames[i];
     const trainerFilename = uniqueTrainerFilenames[i];
-    const trainerPath = `${directory}/${trainerFilename}`;
+    const trainerPath = `${mockFileSystem.directory}/${trainerFilename}`;
 
     mockDirectoryContent.push(trainerFilename);
     fileContent = generateMockTrainerFileContent(trainerName);
@@ -62,7 +68,7 @@ function arrangeMockStaticTrainers(
 
   for (let j = 0; j < numDirectories; j++) {
     const directoryName = uniqueTrainerDirectoryNames[j];
-    const directoryPath = `${directory}/${directoryName}`;
+    const directoryPath = `${mockFileSystem.directory}/${directoryName}`;
 
     mockDirectoryContent.push(directoryName);
     mockTrainerFileContentByPath[directoryPath] =
@@ -101,12 +107,12 @@ describe('Static Content Broker - Unit', () => {
 
   it('should return an array of objects with a specific structure', () => {
     // arrange
-    const directory = `some-directory-${chance.word()}`;
-    const mockedTrainers = arrangeMockStaticTrainers(directory);
+    const mockFileSystem = generateMockFileSystem();
+    const mockedTrainers = arrangeMockStaticTrainers(mockFileSystem);
     const numTrainers = mockedTrainers.length;
 
     // act
-    const actualTrainers = getAvailableTrainers(directory);
+    const actualTrainers = getAvailableTrainers(mockFileSystem.directory);
 
     // assert
     expect(actualTrainers.length).toEqual(mockedTrainers.length);
@@ -120,19 +126,19 @@ describe('Static Content Broker - Unit', () => {
 
   it('should return array of trainers found in specified directory', () => {
     // arrange
-    const directory = `some-directory-${chance.word()}`;
-    const mockedTrainers = arrangeMockStaticTrainers(directory);
+    const mockFileSystem = generateMockFileSystem();
+    const mockedTrainers = arrangeMockStaticTrainers(mockFileSystem);
     const numTrainers = mockedTrainers.length;
 
     // act
-    const actualTrainers = getAvailableTrainers(directory);
+    const actualTrainers = getAvailableTrainers(mockFileSystem.directory);
 
     // assert
     expect(actualTrainers).toBeDefined();
     expect(actualTrainers.length).toEqual(numTrainers);
 
     expect(fs.readdirSync).toHaveBeenCalledTimes(1);
-    expect(fs.readdirSync).toHaveBeenCalledWith(directory);
+    expect(fs.readdirSync).toHaveBeenCalledWith(mockFileSystem.directory);
     expect(fs.readFileSync).toHaveBeenCalledTimes(numTrainers);
 
     const pathIndex = 0;
@@ -141,7 +147,7 @@ describe('Static Content Broker - Unit', () => {
     let optionsParam;
     for (let i = 0; i < numTrainers; i++) {
       pathParam = fs.readFileSync.mock.calls[i][pathIndex];
-      expect(pathParam.startsWith(directory)).toEqual(true);
+      expect(pathParam.startsWith(mockFileSystem.directory)).toEqual(true);
 
       optionsParam = fs.readFileSync.mock.calls[i][optionsIndex];
       expect(optionsParam).toEqual('utf8');
@@ -153,14 +159,14 @@ describe('Static Content Broker - Unit', () => {
 
   it('should ignore directories in same directory as trainers', () => {
     // arrange
-    const directory = `some-directory-${chance.word()}`;
+    const mockFileSystem = generateMockFileSystem();
     const numTrainersToMock = chance.integer({min: 1, max: 5});
     const numDirectoriesToIgnore = chance.integer({min: 1, max: 5});
     const mockedTrainers = arrangeMockStaticTrainers(
-        directory, numTrainersToMock, numDirectoriesToIgnore);
+        mockFileSystem, numTrainersToMock, numDirectoriesToIgnore);
 
     // act
-    const actualTrainers = getAvailableTrainers(directory);
+    const actualTrainers = getAvailableTrainers(mockFileSystem.directory);
 
     // assert
     expect(mockedTrainers.length).toEqual(numTrainersToMock);
