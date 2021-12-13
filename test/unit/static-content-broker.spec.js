@@ -8,7 +8,8 @@ fs.readdirSync.mockName('mocked-readdirSync');
 fs.readFileSync.mockName('mocked-readdirSync');
 fs.lstatSync.mockName('mocked-lstatSync');
 
-function generateMockTrainerFileContent(name) {
+function generateMockTrainerFileContent(
+    name = `trainerName-${chance.word()}`) {
   const trainer = {
     name,
   };
@@ -24,58 +25,54 @@ function generateMockFsStatsEntry(isDirectory) {
   };
 }
 
-function generateMockFileSystem() {
+function generateMockFileSystem(
+    numValidFiles = chance.d20(), numDirectories = 0) {
+  const params = {
+    numTrainers: numValidFiles,
+    numDirectories,
+
+    uniqueTrainerFilenames: chance.unique(() => {
+      return `${chance.word()}-trainer.json`;
+    }, numValidFiles),
+
+    uniqueTrainerDirectoryNames: chance.unique(() => {
+      return `${chance.word()}-directory`;
+    }, numDirectories),
+  };
+
   const filesystem = {
     directory: `some-directory-${chance.word()}`,
     fileContentByPath: {},
-    directoryContent: [],
     statsEntriesByPath: {},
   };
 
   return {
     fs: filesystem,
+    params,
   };
 }
 
 // Generate random purely mocked trainer files in specified directory
 // When numDirectories > 0, will mix in that many directories
-function arrangeMockStaticTrainers(
-    mfs = generateMockFileSystem(),
-    numTrainers = chance.integer({min: 1, max: 20}),
-    numDirectories = 0) {
+function arrangeMockStaticTrainers(mfs = generateMockFileSystem()) {
   const mockTrainers = [];
   let fileContent;
 
-  const uniqueTrainerNames = chance.unique(() => {
-    return `trainerName-${chance.word()}`;
-  }, numTrainers);
-  const uniqueTrainerFilenames = chance.unique(() => {
-    return `${chance.word()}-trainer.json`;
-  }, numTrainers);
-
-  for (let i = 0; i < numTrainers; i++) {
-    const trainerName = uniqueTrainerNames[i];
-    const trainerFilename = uniqueTrainerFilenames[i];
+  mfs.params.uniqueTrainerFilenames.forEach((trainerFilename) => {
     const trainerPath = `${mfs.fs.directory}/${trainerFilename}`;
 
-    mfs.fs.directoryContent.push(trainerFilename);
-    fileContent = generateMockTrainerFileContent(trainerName);
+    fileContent = generateMockTrainerFileContent();
     mfs.fs.fileContentByPath[trainerPath] = fileContent;
     mockTrainers.push(JSON.parse(fileContent));
 
     mfs.fs.statsEntriesByPath[trainerPath] =
       generateMockFsStatsEntry(false);
-  }
+  });
 
-  const uniqueTrainerDirectoryNames = chance.unique(() => {
-    return `${chance.word()}-directory`;
-  }, numTrainers);
-
-  for (let j = 0; j < numDirectories; j++) {
-    const directoryName = uniqueTrainerDirectoryNames[j];
+  for (let j = 0; j < mfs.params.numDirectories; j++) {
+    const directoryName = mfs.params.uniqueTrainerDirectoryNames[j];
     const directoryPath = `${mfs.fs.directory}/${directoryName}`;
 
-    mfs.fs.directoryContent.push(directoryName);
     mfs.fs.fileContentByPath[directoryPath] =
       'This is a directory, not a file!';
 
@@ -83,7 +80,10 @@ function arrangeMockStaticTrainers(
       generateMockFsStatsEntry(true);
   }
 
-  fs.readdirSync.mockReturnValue(mfs.fs.directoryContent);
+  fs.readdirSync.mockReturnValue([
+    ...mfs.params.uniqueTrainerDirectoryNames,
+    ...mfs.params.uniqueTrainerFilenames,
+  ]);
 
   fs.readFileSync.mockImplementation((path) => {
     const entry = mfs.fs.fileContentByPath[path];
@@ -165,11 +165,10 @@ describe('Static Content Broker - Unit', () => {
 
   it('should ignore directories in same directory as trainers', () => {
     // arrange
-    const mfs = generateMockFileSystem();
-    const numTrainersToMock = chance.integer({min: 1, max: 5});
-    const numDirectoriesToIgnore = chance.integer({min: 1, max: 5});
-    const mockedTrainers = arrangeMockStaticTrainers(
-        mfs, numTrainersToMock, numDirectoriesToIgnore);
+    const numTrainersToMock = chance.d6();
+    const numDirectoriesToMock = chance.d6();
+    const mfs = generateMockFileSystem(numTrainersToMock, numDirectoriesToMock);
+    const mockedTrainers = arrangeMockStaticTrainers(mfs);
 
     // act
     const actualTrainers = getAvailableTrainers(mfs.fs.directory);
@@ -178,7 +177,7 @@ describe('Static Content Broker - Unit', () => {
     expect(mockedTrainers.length).toEqual(numTrainersToMock);
 
     expect(actualTrainers).toBeDefined();
-    expect(actualTrainers.length).toEqual(numTrainersToMock);
+    expect(actualTrainers.length).toEqual(mockedTrainers.length);
     expect(actualTrainers.sort(trainerSorter))
         .toEqual(mockedTrainers.sort(trainerSorter));
   });
