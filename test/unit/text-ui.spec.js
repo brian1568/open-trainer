@@ -2,9 +2,22 @@ const {display, displayAvailableContent} = require('../../src/text-ui');
 const Chance = require('chance');
 const chance = new Chance();
 
+function generateMockTrainers(numTrainers = chance.integer({min: 1, max: 10})) {
+  const trainers = [];
+
+  for (let i = 0; i < numTrainers; i++) {
+    trainers.push({
+      name: `trainer-${chance.word()}`,
+    });
+  }
+
+  return trainers;
+}
+
 describe('Text UI - Unit', () => {
   beforeAll(() => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
+    console.log.mockName('mocked-console.log');
   });
 
   afterEach(() => {
@@ -18,19 +31,19 @@ describe('Text UI - Unit', () => {
   it('should display available content', () => {
     // arrange
     const label = 'Available Content:';
-    const content = ['horse', 'pig', 'whale'];
+    const trainers = generateMockTrainers();
 
     // act
-    displayAvailableContent(content);
+    displayAvailableContent(trainers);
 
     // assert
     expect(console.log).toHaveBeenNthCalledWith(1, label);
 
     const nthCallOffset = 2;
-    for (let contentIndex = 0; contentIndex < content.length; contentIndex++) {
+    for (let trainerIndex = 0; trainerIndex < trainers.length; trainerIndex++) {
       expect(console.log).toHaveBeenNthCalledWith(
-          nthCallOffset + contentIndex,
-          `${contentIndex + 1}: ${content[contentIndex]}`);
+          nthCallOffset + trainerIndex,
+          `${trainerIndex + 1}: ${trainers[trainerIndex].name}`);
     }
   });
 

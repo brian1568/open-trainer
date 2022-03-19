@@ -4,10 +4,17 @@ const Chance = require('chance');
 const chance = new Chance();
 
 jest.mock('fs');
+fs.readdirSync.mockName('mocked-readdirSync');
+fs.readFileSync.mockName('mocked-readdirSync');
+fs.lstatSync.mockName('mocked-lstatSync');
 
-// For now, structure of JSON file just contains trainer name
-function generateMockTrainerFileContent(name) {
-  return name;
+function generateMockTrainerFileContent(
+    name = `trainerName-${chance.word()}`) {
+  const trainer = {
+    name,
+  };
+
+  return JSON.stringify(trainer);
 }
 
 function generateMockFsStatsEntry(isDirectory) {
@@ -18,47 +25,68 @@ function generateMockFsStatsEntry(isDirectory) {
   };
 }
 
+function generateMockFileSystem(
+    numValidFiles = chance.d20(), numDirectories = 0) {
+  const params = {
+    numTrainers: numValidFiles,
+    numDirectories,
+
+    uniqueTrainerFilenames: chance.unique(() => {
+      return `${chance.word()}-trainer.json`;
+    }, numValidFiles),
+
+    uniqueTrainerDirectoryNames: chance.unique(() => {
+      return `${chance.word()}-directory`;
+    }, numDirectories),
+  };
+
+  const filesystem = {
+    directory: `some-directory-${chance.word()}`,
+    fileContentByPath: {},
+    statsEntriesByPath: {},
+  };
+
+  return {
+    fs: filesystem,
+    params,
+  };
+}
+
 // Generate random purely mocked trainer files in specified directory
 // When numDirectories > 0, will mix in that many directories
-function arrangeMockStaticTrainers(
-    directory,
-    numTrainers = chance.integer({min: 1, max: 20}),
-    numDirectories = 0) {
-  const mockTrainerNames = [];
-  const mockTrainerFileContentByPath = {};
-  const mockDirectoryContent = [];
-  const mockFsStatsEntriesByPath = {};
+function arrangeMockStaticTrainers(mfs = generateMockFileSystem()) {
+  const mockTrainers = [];
+  let fileContent;
 
-  for (let i = 0; i < numTrainers; i++) {
-    const trainerName = `trainerName-${chance.word()}`;
-    const trainerFilename = `${chance.word()}-trainer.json`;
-    const trainerPath = `${directory}/${trainerFilename}`;
+  mfs.params.uniqueTrainerFilenames.forEach((trainerFilename) => {
+    const trainerPath = `${mfs.fs.directory}/${trainerFilename}`;
 
-    mockTrainerNames.push(trainerName);
-    mockDirectoryContent.push(trainerFilename);
-    mockTrainerFileContentByPath[trainerPath] =
-      generateMockTrainerFileContent(trainerName);
+    fileContent = generateMockTrainerFileContent();
+    mfs.fs.fileContentByPath[trainerPath] = fileContent;
+    mockTrainers.push(JSON.parse(fileContent));
 
-    mockFsStatsEntriesByPath[trainerPath] = generateMockFsStatsEntry(false);
-  }
+    mfs.fs.statsEntriesByPath[trainerPath] =
+      generateMockFsStatsEntry(false);
+  });
 
-  for (let j = 0; j < numDirectories; j++) {
-    const directoryName = `${chance.word()}-directory`;
-    const directoryPath = `${directory}/${directoryName}`;
+  for (let j = 0; j < mfs.params.numDirectories; j++) {
+    const directoryName = mfs.params.uniqueTrainerDirectoryNames[j];
+    const directoryPath = `${mfs.fs.directory}/${directoryName}`;
 
-    mockDirectoryContent.push(directoryName);
-    mockTrainerFileContentByPath[directoryPath] =
+    mfs.fs.fileContentByPath[directoryPath] =
       'This is a directory, not a file!';
 
-    mockFsStatsEntriesByPath[directoryPath] = generateMockFsStatsEntry(true);
+    mfs.fs.statsEntriesByPath[directoryPath] =
+      generateMockFsStatsEntry(true);
   }
 
-  fs.readdirSync.mockName('mocked-readdirSync');
-  fs.readdirSync.mockReturnValue(mockDirectoryContent);
+  fs.readdirSync.mockReturnValue([
+    ...mfs.params.uniqueTrainerDirectoryNames,
+    ...mfs.params.uniqueTrainerFilenames,
+  ]);
 
-  fs.readFileSync.mockName('mocked-readdirSync');
   fs.readFileSync.mockImplementation((path) => {
-    const entry = mockTrainerFileContentByPath[path];
+    const entry = mfs.fs.fileContentByPath[path];
 
     if (entry.endsWith('-directory')) {
       throw new Error(`'${path}' is not a file!`);
@@ -67,12 +95,15 @@ function arrangeMockStaticTrainers(
     return entry;
   });
 
-  fs.lstatSync.mockName('mocked-lstatSync');
   fs.lstatSync.mockImplementation((name) => {
-    return mockFsStatsEntriesByPath[name];
+    return mfs.fs.statsEntriesByPath[name];
   });
 
-  return chance.shuffle(mockTrainerNames);
+  return chance.shuffle(mockTrainers);
+}
+
+function trainerSorter(a, b) {
+  return a.name.localeCompare(b.name);
 }
 
 describe('Static Content Broker - Unit', () => {
@@ -80,21 +111,40 @@ describe('Static Content Broker - Unit', () => {
     jest.resetAllMocks();
   });
 
-  it('should return array of trainers found in specified directory', () => {
+  it('should return an array of objects with a specific structure', () => {
     // arrange
-    const directory = `some-directory-${chance.word()}`;
-    const availableTrainers = arrangeMockStaticTrainers(directory);
-    const numTrainers = availableTrainers.length;
+    const mfs = generateMockFileSystem();
+    const mockedTrainers = arrangeMockStaticTrainers(mfs);
+    const numTrainers = mockedTrainers.length;
 
     // act
-    const result = getAvailableTrainers(directory);
+    const actualTrainers = getAvailableTrainers(mfs.fs.directory);
 
     // assert
-    expect(result).toBeDefined();
-    expect(result.length).toEqual(numTrainers);
+    expect(actualTrainers.length).toEqual(mockedTrainers.length);
+
+    let trainer;
+    for (let i = 0; i < numTrainers; i++) {
+      trainer = actualTrainers[i];
+      expect(trainer.name).toBeDefined();
+    }
+  });
+
+  it('should return array of trainers found in specified directory', () => {
+    // arrange
+    const mfs = generateMockFileSystem();
+    const mockedTrainers = arrangeMockStaticTrainers(mfs);
+    const numTrainers = mockedTrainers.length;
+
+    // act
+    const actualTrainers = getAvailableTrainers(mfs.fs.directory);
+
+    // assert
+    expect(actualTrainers).toBeDefined();
+    expect(actualTrainers.length).toEqual(numTrainers);
 
     expect(fs.readdirSync).toHaveBeenCalledTimes(1);
-    expect(fs.readdirSync).toHaveBeenCalledWith(directory);
+    expect(fs.readdirSync).toHaveBeenCalledWith(mfs.fs.directory);
     expect(fs.readFileSync).toHaveBeenCalledTimes(numTrainers);
 
     const pathIndex = 0;
@@ -103,31 +153,32 @@ describe('Static Content Broker - Unit', () => {
     let optionsParam;
     for (let i = 0; i < numTrainers; i++) {
       pathParam = fs.readFileSync.mock.calls[i][pathIndex];
-      expect(pathParam.startsWith(directory)).toEqual(true);
+      expect(pathParam.startsWith(mfs.fs.directory)).toEqual(true);
 
       optionsParam = fs.readFileSync.mock.calls[i][optionsIndex];
       expect(optionsParam).toEqual('utf8');
     }
 
-    expect(result.sort()).toEqual(availableTrainers.sort());
+    expect(actualTrainers.sort(trainerSorter))
+        .toEqual(mockedTrainers.sort(trainerSorter));
   });
 
   it('should ignore directories in same directory as trainers', () => {
     // arrange
-    const directory = `some-directory-${chance.word()}`;
-    const numTrainersToMock = chance.integer({min: 1, max: 5});
-    const numDirectoriesToIgnore = chance.integer({min: 1, max: 5});
-    const availableTrainers = arrangeMockStaticTrainers(
-        directory, numTrainersToMock, numDirectoriesToIgnore);
+    const numTrainersToMock = chance.d6();
+    const numDirectoriesToMock = chance.d6();
+    const mfs = generateMockFileSystem(numTrainersToMock, numDirectoriesToMock);
+    const mockedTrainers = arrangeMockStaticTrainers(mfs);
 
     // act
-    const result = getAvailableTrainers(directory);
+    const actualTrainers = getAvailableTrainers(mfs.fs.directory);
 
     // assert
-    expect(availableTrainers.length).toEqual(numTrainersToMock);
+    expect(mockedTrainers.length).toEqual(numTrainersToMock);
 
-    expect(result).toBeDefined();
-    expect(result.length).toEqual(numTrainersToMock);
-    expect(result.sort()).toEqual(availableTrainers.sort());
+    expect(actualTrainers).toBeDefined();
+    expect(actualTrainers.length).toEqual(mockedTrainers.length);
+    expect(actualTrainers.sort(trainerSorter))
+        .toEqual(mockedTrainers.sort(trainerSorter));
   });
 });

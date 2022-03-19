@@ -6,8 +6,8 @@
   "scripts": {
     "lint": "eslint src test",
     "fixlint": "eslint src test --fix",
-    "test": "jest ./test/unit",
-    "integration": "cross-env NODE_ENV=user jest ./test/integration",
+    "test": "jest --coverage ./test/unit",
+    "integration": "cross-env NODE_ENV=user jest --coverage ./test/integration",
     "verify": "npm run fixlint && npm run lint && npm run test && npm run integration",
     "TUI": "cross-env NODE_ENV=user node src/main.js"
   },
